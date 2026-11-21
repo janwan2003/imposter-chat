@@ -1,6 +1,6 @@
 ---
 slug: imposter-chat
-stage: building
+stage: launched
 priority: 4
 url: https://pb-imposter-chat.jan-bef.workers.dev
 repo: https://github.com/janwan2003/imposter-chat
@@ -89,7 +89,8 @@ Searches run 2026-11-20. Sources are search-result summaries, not opened pages.
 
 **Live: https://pb-imposter-chat.jan-bef.workers.dev** (Cloudflare Worker `pb-imposter-chat` with static
 assets and one SQLite-backed Durable Object class `Games`, free plan). Product, privacy and support page:
-https://janwan2003.github.io/imposter-chat/ (GitHub Pages from `docs/`).
+https://janwan2003.github.io/imposter-chat/ (GitHub Pages from `docs/`). Search Console: verified by
+META and sitemap submitted 2026-11-21 (`python3 scripts/gsc.py status` reads analytics).
 
 Why not Pages + D1: `wrangler d1 create pb-imposter-chat` failed on 2026-11-21 with "You have reached
 the maximum number of D1 databases for your account" (free plan: 10). Game state lives in Durable Object
@@ -143,21 +144,19 @@ Verified 2026-11-21:
 
 Not covered yet: deadline auto-advance on production (unit-tested only; it needs an hour), real iOS
 Safari / Android Chrome, WhatsApp/iMessage preview rendering, Web Share on a real phone, more than 5
-players, and Search Console.
+players.
 
 ## Next steps
 
-1. Search Console: verify the workers.dev URL prefix (META tag in `public/index.html`), submit the
-   sitemap (see party-game-night's `scripts/gsc.py` for the studio's approach).
-2. Real-device pass: iPhone Safari and Android Chrome join → card → clue → vote, Web Share of the
+1. Real-device pass: iPhone Safari and Android Chrome join → card → clue → vote, Web Share of the
    result image, keyboard over the clue input, WhatsApp link preview.
-3. Search landing pages that match how people look for it: "imposter word game online", "imposter game
+2. Search landing pages that match how people look for it: "imposter word game online", "imposter game
    with friends in group chat", "imposter word list" (a public sample of the packs), each linking to
-   Start a game. Then set stage: launched.
-4. A "quick game" mode for same-room play: shorter default (no limit), and the host's "reveal now"
+   Start a game.
+3. A "quick game" mode for same-room play: shorter default (no limit), and the host's "reveal now"
    shown more prominently.
-5. Dynamic OG image per game state (needs an image route; static `og.png` for now).
-6. Scale: if traffic grows, shard Durable Objects per game (ids are already random) and keep a
+4. Dynamic OG image per game state (needs an image route; static `og.png` for now).
+5. Scale: if traffic grows, shard Durable Objects per game (ids are already random) and keep a
    separate limiter object; count games created and players joined per week for `## Metrics`.
 
 ## Metrics
@@ -178,4 +177,5 @@ packs for classes and teams. Never paywall joining or basic packs.
   async gap still open, name "Oddclue" free), built the whole game (engine, API, client, 720-word
   packs, share card, live link preview), deployed as Worker + Durable Object because the D1 database
   cap is reached. Verified: unit 11/11, e2e in Chromium passes locally and on production (version
-  15b61f5d), rate limit 429 after 20 creates. Repo and GitHub Pages published.
+  15b61f5d), rate limit 429 after 20 creates. Repo and GitHub Pages published (Pages status "built", 4 URLs 200),
+  Search Console verified and sitemap submitted (deploy b9bc9e9f); all 9 live URLs return 200. Stage: launched.

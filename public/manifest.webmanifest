@@ -1,0 +1,13 @@
+{
+  "name": "Oddclue",
+  "short_name": "Oddclue",
+  "description": "The imposter word game for your group chat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf7f2",
+  "theme_color": "#5b3df5",
+  "icons": [
+    { "src": "/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

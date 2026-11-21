@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Oddclue · the imposter word game for your group chat</title>
+  <meta name="description" content="Play the imposter word game in your group chat. Everyone gets the secret word except one imposter. Give a one-word clue, then vote out the bluffer. Free, no app, no sign-up.">
+  <link rel="canonical" href="https://pb-imposter-chat.jan-bef.workers.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Oddclue">
+  <meta property="og:title" content="Oddclue · the imposter word game for your group chat">
+  <meta property="og:description" content="Everyone gets the secret word except one imposter. Give a clue, vote out the bluffer. Free, no app, no sign-up.">
+  <meta property="og:image" content="https://pb-imposter-chat.jan-bef.workers.dev/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pb-imposter-chat.jan-bef.workers.dev/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#5b3df5">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="wrap wide">
+    <header class="top">
+      <a class="logo" href="/"><img src="/icon.svg" alt="" width="32" height="32">Oddclue</a>
+      <a class="top-link" href="#how">How to play</a>
+    </header>
+  </div>
+  <main>
+    <div class="wrap wide">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Free · no app · no sign-up</span>
+          <h1>The imposter word game, right in your group chat.</h1>
+          <p class="lead">Everyone gets the same secret word, except one imposter who has to bluff. Each of you gives a one-word clue, on your own phone, whenever you like. Then you vote out the faker.</p>
+          <ul class="ticks">
+            <li>Send one link. Friends tap it, type a name, and they're in.</li>
+            <li>Play together in the same room, or spread a round over the day.</li>
+            <li>720 original words in 18 packs, including Christmas.</li>
+          </ul>
+        </div>
+        <form id="create" class="card" autocomplete="off" novalidate>
+          <h2>Start a game</h2>
+          <p class="muted small">You'll get a link to drop in your group chat.</p>
+          <div class="field">
+            <label for="nick">Your nickname</label>
+            <input id="nick" type="text" maxlength="20" required placeholder="e.g. Maya" enterkeyhint="go">
+          </div>
+          <div class="field">
+            <label for="gname">Game name <span class="muted small">(optional)</span></label>
+            <input id="gname" type="text" maxlength="40" placeholder="e.g. Lunch crew">
+          </div>
+          <details class="more">
+            <summary>Word packs and timing</summary>
+            <div class="field">
+              <label>Word packs</label>
+              <div id="packs" class="packs"><span class="muted small">Loading packs…</span></div>
+            </div>
+            <div class="field">
+              <label for="limit">Time per step</label>
+              <select id="limit">
+                <option value="0">No limit (the host moves it on)</option>
+                <option value="3600">1 hour</option>
+                <option value="10800" selected>3 hours</option>
+                <option value="43200">12 hours</option>
+                <option value="86400">24 hours</option>
+              </select>
+              <p class="muted small" style="margin-top:6px">Clues and votes move on as soon as everyone is in. The limit only stops one sleepy player holding up the round.</p>
+            </div>
+            <label class="check"><input id="showcat" type="checkbox" checked> Show the imposter the category</label>
+          </details>
+          <button class="btn" type="submit" style="margin-top:14px">Create game and get the link</button>
+          <p id="err" class="error" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="how">
+        <h2 style="margin-top:20px">How to play</h2>
+        <div class="steps">
+          <div class="step"><b>1</b><h3>Share the link</h3><p class="muted">Create a game and send the link to your group. You need 3 or more players.</p></div>
+          <div class="step"><b>2</b><h3>Peek at your card</h3><p class="muted">Everyone sees the secret word, except the imposter, who only sees the category.</p></div>
+          <div class="step"><b>3</b><h3>Give one clue</h3><p class="muted">Write a word that proves you know it, without giving it away. Clues stay hidden until all are in.</p></div>
+          <div class="step"><b>4</b><h3>Vote out the faker</h3><p class="muted">Read the clues and vote. If caught, the imposter can still steal points by guessing the word.</p></div>
+        </div>
+      </section>
+
+      <section class="faq card flat">
+        <h2>Questions</h2>
+        <h3>Do we all need to be online at the same time?</h3>
+        <p class="muted">No. That's the point. Each person opens the link when they have a moment. The clues are revealed together once everyone has written one, and the page updates by itself if you're watching.</p>
+        <h3>Can we play in the same room?</h3>
+        <p class="muted">Yes. Everyone uses their own phone, so nobody passes a phone around or peeks at someone else's card.</p>
+        <h3>How does scoring work?</h3>
+        <p class="muted">Crew members score 1 point for voting for the imposter. The imposter scores 2 for getting away with it, and 2 more for guessing the secret word. Scores add up over rounds.</p>
+        <h3>Do I need an account?</h3>
+        <p class="muted">No. You pick a nickname, and your phone remembers you for this game. We don't ask for an email or phone number. See the <a href="/privacy">privacy policy</a>.</p>
+      </section>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap wide">
+      <span>Oddclue · a free party word game</span>
+      <span><a href="/privacy">Privacy</a> · <a href="https://github.com/janwan2003/imposter-chat/issues">Support</a></span>
+    </div>
+  </footer>
+  <script src="/common.js"></script>
+  <script src="/home.js"></script>
+</body>
+</html>

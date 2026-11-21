@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /g/
+Sitemap: https://pb-imposter-chat.jan-bef.workers.dev/sitemap.xml

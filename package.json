@@ -6,7 +6,8 @@
     "dev": "wrangler dev --port 8831",
     "deploy": "wrangler deploy",
     "test:unit": "node --test tests/unit/*.test.js",
-    "test:e2e": "node tests/e2e/run.mjs"
+    "test:e2e": "node tests/e2e/run.mjs",
+    "test:layout": "node tests/e2e/layout.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0",

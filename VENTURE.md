@@ -4,7 +4,7 @@ stage: launched
 priority: 4
 url: https://pb-imposter-chat.jan-bef.workers.dev
 repo: https://github.com/janwan2003/imposter-chat
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 # imposter-chat (brand: **Oddclue**)
@@ -118,11 +118,16 @@ What exists and works:
   the next round.
 - Live link preview per game: "Round 1 · 1 of 4 clues in · 4 players so far…", "voting: 2 of 4
   votes in", "Round 1 revealed". Static OG image `og.png`.
-- Adaptive polling: 2.5 s after a change, backing off ×1.35 to 20 s while nothing changes, paused
-  when the tab is hidden; an unchanged poll is one row read (`?v=` version check).
+- Adaptive polling: 2.5 s after a change, backing off ×1.35 to 6 s while a round is live (15 s in the
+  lobby and after a reveal), paused when the tab is hidden; an unchanged poll is one row read (`?v=` version check).
 - Content: 18 original packs × 40 words = 720 unique words (`src/words.js`), including Christmas.
-- Safety: per IP per hour 20 game creations, 60 joins, 900 writes; games deleted 30 days after the
-  last activity; CSP and security headers; no accounts, cookies or analytics.
+- Safety: per IP per hour 60 game creations, 300 joins, 3000 writes (raised 2026-11-22: school Wi-Fi and
+  mobile carriers put many players behind one IP); games deleted 30 days after the last activity; CSP and
+  security headers; no accounts, cookies or analytics.
+- Usage counts: `GET /api/stats` returns per-UTC-day totals of games created, joins and rounds dealt
+  (table `daily`, counting since 2026-11-22), plus games and players currently stored. No names or ids.
+  Our test suites send `x-test: 1`, which counts 0, so test runs do not inflate it.
+- Branded 404 page (`public/404.html`).
 
 Verified 2026-11-21:
 - `node --test tests/unit/*.test.js`: 11/11 pass (packs shape and uniqueness, normalising and guess
@@ -142,26 +147,53 @@ Verified 2026-11-21:
   vote, reveal (phone), share card, OG image. Fixed: OG cards cut off at the right edge; empty space
   on the share card (now lists the other clues).
 
-Not covered yet: deadline auto-advance on production (unit-tested only; it needs an hour), real iOS
+Quality pass 2026-11-22 (Worker version a890c7b4, then test-only changes):
+- Bugs found and fixed: (1) vote list squeezed a player's name into a one-letter column when the clue was
+  long (360/390 px); name now sits above the clue, also on the reveal. (2) countdown read "2h 60m". (3) a
+  round past its deadline with under 2 clues said "Moving on any moment" forever and every open tab
+  re-polled every 2.5 s; now it says what it waits for and backs off. (4) long status pills could not wrap.
+  (5) unknown URLs had no 404 page. (6) players who left could still be voted for (client and API).
+  (7) "Start a game in another chat" twice on the reveal. (8) reveal buttons wrapped at 360 px.
+  (9) a player watching a live round could wait up to 20 s for the next step (back-off cap now 6 s).
+- Design: landing puts the create form right after the headline on phones (was below the fold at 360 px),
+  shorter "Create game" button, new "what a round looks like" preview (word card, imposter card, vote
+  list; swipeable on phones), compact how-to steps on phones, "Crew wins / Imposter wins" banner on the
+  reveal. GitHub Pages page rebuilt with the same preview and how-to.
+- `tests/e2e/layout.mjs` (new): 18 screens x 360 px, 390 px, 1280 px = 54 screenshots with worst-case
+  text (20-char names, 32-char unbroken clue); fails on horizontal overflow or any console error.
+  PASS locally and on production. Phone sheets checked by eye.
+- `tests/e2e/run.mjs` (now also checks the branded 404, the stats endpoint, no names in stats): PASS
+  locally, and on production 3/3 consecutive runs after the last fixes. Earlier production failures this
+  session, by class: 2 were a test bug ("gymnastics" + "s" is not a forgivable plural; fixed in the test,
+  unit test added), 1 was our own join rate limit after ~12 runs from one IP (environment), 1 timed out
+  waiting for a vote button and did not recur in 9 later runs (unexplained).
+- `node --test tests/unit/*.test.js`: 12/12. Live `/`, `/privacy`, `/api/stats`, `/og.png`, `/sitemap.xml`,
+  `/robots.txt`, `/icon.svg`, `/manifest.webmanifest` 200; `/no-such-page` 404 with the branded page.
+
+Not covered yet: deadline auto-advance on production and the new past-deadline wording (unit-tested or
+checked by eye only; it needs an hour), real iOS
 Safari / Android Chrome, WhatsApp/iMessage preview rendering, Web Share on a real phone, more than 5
 players.
 
 ## Next steps
 
-1. Real-device pass: iPhone Safari and Android Chrome join → card → clue → vote, Web Share of the
-   result image, keyboard over the clue input, WhatsApp link preview.
-2. Search landing pages that match how people look for it: "imposter word game online", "imposter game
+1. Real-device pass (needs the operator's phones, see inbox): iPhone Safari and Android Chrome join, card,
+   clue, vote, Web Share of the result image, keyboard over the clue input, WhatsApp/iMessage link preview.
+2. Fill `## Metrics` weekly from `GET /api/stats` (`last7` vs `prev7`).
+3. Search landing pages that match how people look for it: "imposter word game online", "imposter game
    with friends in group chat", "imposter word list" (a public sample of the packs), each linking to
    Start a game.
-3. A "quick game" mode for same-room play: shorter default (no limit), and the host's "reveal now"
-   shown more prominently.
-4. Dynamic OG image per game state (needs an image route; static `og.png` for now).
-5. Scale: if traffic grows, shard Durable Objects per game (ids are already random) and keep a
-   separate limiter object; count games created and players joined per week for `## Metrics`.
+4. Dynamic OG image per game state (static `og.png` for now).
+5. Scale: polling is about 600 requests per hour per watching player in a live round; the free plan allows
+   100k Durable Object requests a day. If traffic grows, move live updates to WebSockets with hibernation
+   and shard Durable Objects per game.
 
 ## Metrics
 
 - 2026-11-21: deployed today; no users yet (only e2e test games).
+- 2026-11-22: `/api/stats` added today. Its 2026-11-22 row (11 games, 42 joins, 19 rounds at ~14:00 UTC) is
+  almost all this session's test runs from before the `x-test` exclusion; treat that day as test traffic.
+  Search Console 0 impressions (review line in Log).
 
 ## Monetization plan
 
@@ -179,3 +211,6 @@ packs for classes and teams. Never paywall joining or basic packs.
   cap is reached. Verified: unit 11/11, e2e in Chromium passes locally and on production (version
   15b61f5d), rate limit 429 after 20 creates. Repo and GitHub Pages published (Pages status "built", 4 URLs 200),
   Search Console verified and sitemap submitted (deploy b9bc9e9f); all 9 live URLs return 200. Stage: launched.
+- 2026-11-21 review: kept p4. live URL 200 with 0 console errors in headless Chromium at 390 px, Search Console 0 impressions 2026-11-01→11-21; usage not countable from outside (Durable Object storage, no count endpoint). Under 21 days live, so no traction verdict.
+- 2026-11-22 review: kept p4. URL 200, 0 console errors (headless Chromium, 390 px, 2026-11-22 ~03:40 UTC); Search Console 0 impressions 11-01→11-22; usage not countable (Durable Object, `/api/stats` 404). Under 21 days live, so no traction verdict. Add a count endpoint for the weekly Metrics line.
+- 2026-11-22 builder (quality): 9 bugs fixed (vote-list squeeze, "2h 60m", stuck past-deadline round with 2.5 s re-poll, pill wrap, no 404 page, voting for players who left, duplicate link, reveal button wrap, 20 s wait in live rounds); landing redesigned for phones with a round preview; reveal banner; Pages page rebuilt; `/api/stats` daily counts; per-IP limits raised for shared IPs. New `tests/e2e/layout.mjs` (54 screenshots, 3 widths, worst-case text) PASS local + prod; `run.mjs` PASS 3/3 on prod (Worker a890c7b4); unit 12/12.

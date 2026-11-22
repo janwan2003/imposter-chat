@@ -32,15 +32,10 @@
   <main>
     <div class="wrap wide">
       <section class="hero">
-        <div>
+        <div class="intro">
           <span class="eyebrow">Free · no app · no sign-up</span>
           <h1>The imposter word game, right in your group chat.</h1>
           <p class="lead">Everyone gets the same secret word, except one imposter who has to bluff. Each of you gives a one-word clue, on your own phone, whenever you like. Then you vote out the faker.</p>
-          <ul class="ticks">
-            <li>Send one link. Friends tap it, type a name, and they're in.</li>
-            <li>Play together in the same room, or spread a round over the day.</li>
-            <li>720 original words in 18 packs, including Christmas.</li>
-          </ul>
         </div>
         <form id="create" class="card" autocomplete="off" novalidate>
           <h2>Start a game</h2>
@@ -72,13 +67,37 @@
             </div>
             <label class="check"><input id="showcat" type="checkbox" checked> Show the imposter the category</label>
           </details>
-          <button class="btn" type="submit" style="margin-top:14px">Create game and get the link</button>
+          <button class="btn" type="submit" style="margin-top:14px">Create game</button>
           <p id="err" class="error" role="alert"></p>
         </form>
+        <ul class="ticks">
+          <li>Send one link. Friends tap it, type a name, and they're in.</li>
+          <li>Play together in the same room, or spread a round over the day.</li>
+          <li>720 original words in 18 packs, including Christmas.</li>
+        </ul>
+      </section>
+
+      <section class="showcase" aria-label="What a round looks like">
+        <figure>
+          <div class="secret mini"><div><div class="k">Food · secret word</div><div class="w">pancake</div><div class="h">One player doesn't know it</div></div></div>
+          <figcaption><b>Most of you see the word</b> on your own phone.</figcaption>
+        </figure>
+        <figure>
+          <div class="secret imp mini"><div><div class="k">You are the</div><div class="w">Imposter</div><div class="h">Category: <b>Food</b> · Bluff!</div></div></div>
+          <figcaption><b>One of you doesn't</b>, and has to fake a clue.</figcaption>
+        </figure>
+        <figure>
+          <div class="card mini-votes" aria-hidden="true">
+            <div class="clue"><span class="av" style="background:#0f9d7a">L</span><span class="who stacked"><span class="nm">Leo</span><span class="said">“syrup”</span></span></div>
+            <div class="clue picked"><span class="av" style="background:#e5484d">S</span><span class="who stacked"><span class="nm">Sam</span><span class="said">“crunchy”</span></span></div>
+            <div class="clue"><span class="av" style="background:#2f7de1">M</span><span class="who stacked"><span class="nm">Maya</span><span class="said">“flip”</span></span></div>
+          </div>
+          <figcaption><b>Then everyone votes.</b> Sam, crunchy pancakes?</figcaption>
+        </figure>
       </section>
 
       <section id="how">
-        <h2 style="margin-top:20px">How to play</h2>
+        <h2>How to play</h2>
         <div class="steps">
           <div class="step"><b>1</b><h3>Share the link</h3><p class="muted">Create a game and send the link to your group. You need 3 or more players.</p></div>
           <div class="step"><b>2</b><h3>Peek at your card</h3><p class="muted">Everyone sees the secret word, except the imposter, who only sees the category.</p></div>

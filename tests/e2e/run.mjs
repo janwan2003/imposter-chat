@@ -33,7 +33,7 @@ const step = (s) => console.log('·', s);
 const T = { timeout: 15000 };
 
 async function person(label, opts, expected = []) {
-  const ctx = await browser.newContext({ ...opts, acceptDownloads: true });
+  const ctx = await browser.newContext({ ...opts, acceptDownloads: true, extraHTTPHeaders: { 'x-test': '1' } }); // not counted in /api/stats
   const page = await ctx.newPage();
   page.on('console', (m) => {
     if (m.type() === 'error' && !expected.some((re) => re.test(m.text()))) errors.push(`${label}: ${m.text()}`);
@@ -78,7 +78,7 @@ async function clue(p, text) {
 
 async function vote(p, name, guess) {
   await p.page.getByRole('heading', { name: 'Who is the imposter?' }).waitFor(T);
-  const btn = p.page.locator(`button[data-pick]`).filter({ has: p.page.locator('.who', { hasText: new RegExp('^' + name + '$') }) });
+  const btn = p.page.locator(`button[data-pick]`).filter({ has: p.page.locator('.who .nm', { hasText: new RegExp('^' + name + '$') }) });
   const n = await btn.count();
   if (n !== 1) console.log('vote buttons:', await p.page.locator('button[data-pick]').allInnerTexts());
   await btn.click();
@@ -215,7 +215,7 @@ try {
   await imp2.page.getByText('Locked in').waitFor(T);
   await ann.page.getByRole('button', { name: 'Reveal the clues now' }).click();
   for (const p of players2) await p.page.getByRole('heading', { name: 'Who is the imposter?' }).waitFor(T);
-  await vote(imp2, crew2[0].label, word2.toUpperCase() + 's');
+  await vote(imp2, crew2[0].label, word2.toUpperCase() + (/s$/i.test(word2) ? '' : 's')); // case and a plural are forgiven
   await ann.page.getByRole('button', { name: 'Reveal the imposter now' }).click();
   await crew2[1].page.getByText('guessed the word!').waitFor(T);
   const r2 = await stateOf(ann);
@@ -230,9 +230,15 @@ try {
   const gone = await person('Gone', PHONE, [/404/]);
   await gone.page.goto(BASE + '/g/nopeNope1');
   await gone.page.getByText('Game not found').waitFor(T);
-  // Privacy page
+  // Privacy page, branded 404 for unknown paths, counts-only stats
   const pv = await fetch(BASE + '/privacy');
   assert.equal(pv.status, 200);
+  const nf = await fetch(BASE + '/no-such-page');
+  assert.equal(nf.status, 404);
+  assert.match(await nf.text(), /Start a new game/);
+  const st = await (await fetch(BASE + '/api/stats')).json();
+  assert.ok(st.last7 && Number.isInteger(st.last7.games) && st.stored.games >= 1, 'stats shape: ' + JSON.stringify(st));
+  assert.equal(JSON.stringify(st).includes('Ann'), false, 'stats hold no names');
 
   assert.deepEqual(errors, [], 'no console errors');
   console.log('PASS');

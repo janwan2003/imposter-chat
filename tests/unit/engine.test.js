@@ -121,3 +121,10 @@ test('headlines', () => {
   assert.match(headline('caught-guessed', 'Maya', 'pancake'), /guessed “pancake”/);
   assert.match(headline('escaped', 'Maya', 'pancake'), /got away/);
 });
+
+test('guesses for words that end in s', () => {
+  assert.equal(guessMatches('Gymnastics', 'gymnastics'), true);
+  assert.equal(guessMatches('gymnastic', 'gymnastics'), true);
+  assert.equal(guessMatches('GYMNASTICSs', 'gymnastics'), false); // two letters off: not the word
+  assert.equal(guessMatches('glasses', 'glasses'), true);
+});

@@ -20,10 +20,15 @@
     try {
       const v = !force && S ? '?v=' + S.version : '';
       const data = await OC.api('games/' + gameId + v, {}, gameId);
-      if (data.same) {
-        delay = Math.min(Math.round(delay * 1.35), 20000);
-      } else {
-        delay = 2500;
+      if (data.same || (S && data.version === S.version)) {
+        // Nothing changed (also when a past deadline forces a full read): back off. While a round is live
+        // someone is usually watching for the next step, so the wait stays short; in the lobby and after a
+        // reveal it can grow. Hidden tabs do not poll at all.
+        const live = S && S.round && S.round.state !== 'reveal';
+        delay = Math.min(Math.round(delay * 1.35), live ? 6000 : 15000);
+      }
+      if (!data.same && (force || !S || data.version !== S.version)) {
+        if (!S || data.version !== S.version) delay = 2500;
         clockSkew = data.now - Date.now() / 1000;
         const ident = OC.getId(gameId);
         if (ident && !data.me) OC.clearId(gameId); // removed from the game, or the game was reset
@@ -74,10 +79,16 @@
   const isHost = () => S.me && S.me.id === S.hostId;
   function countdown(deadline) {
     const left = Math.max(0, Math.round(deadline - (Date.now() / 1000 + clockSkew)));
-    if (left <= 60) return 'Moving on any moment';
-    const h = Math.floor(left / 3600);
-    const m = Math.round((left % 3600) / 60);
-    return 'Moves on in ' + (h ? `${h}h ${m}m` : `${m} min`) + ' if someone is missing';
+    if (left <= 0) {
+      if (S && S.round && S.round.state === 'clue' && S.round.clued.length < 2) return "Time's up. Clues are shown as soon as 2 are in.";
+      if (S && S.round && S.round.state === 'vote' && S.round.voted.length < 1) return "Time's up. The imposter is revealed after the first vote.";
+      return 'Moving on any moment';
+    }
+    if (left <= 60) return 'Moving on in under a minute';
+    const mins = Math.ceil(left / 60);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return 'Moves on in ' + (h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`) + ' if someone is missing';
   }
   function chips(list, doneIds = [], { kick = false } = {}) {
     return '<ul class="chips">' + list.map((p) => {
@@ -112,8 +123,8 @@
     const plus = S.round && S.round.state === 'reveal' ? new Map(S.round.reveal.points.map((p) => [p.id, p.points])) : new Map();
     return `<section class="card"><h2>Scores</h2><ol class="scores">${S.scores.map((s) => `<li>${OC.avatar(s.id, s.name)}<span class="nm">${esc(s.name)}${s.here ? '' : ' <span class="muted small">(left)</span>'}</span>${plus.get(s.id) ? `<span class="plus">+${plus.get(s.id)}</span>` : ''}<span class="pt">${s.points}</span></li>`).join('')}</ol></section>`;
   }
-  function footerLinks() {
-    return S.me ? `<p class="center small" style="margin-top:22px"><a href="/">Start a game in another chat</a> · <button class="btn small line" data-leave style="display:inline-flex">Leave game</button></p>` : '';
+  function footerLinks(startLink = true) {
+    return S.me ? `<p class="center small" style="margin-top:22px">${startLink ? '<a href="/">Start a game in another chat</a> · ' : ''}<button class="btn small line" data-leave style="display:inline-flex">Leave game</button></p>` : '';
   }
 
   // ---------- views ----------
@@ -198,14 +209,15 @@
     const pill = `<span class="pill imp">Round ${r.no} · vote</span>`;
     const live = r.players.filter((p) => !p.left);
     const clueOf = new Map(r.clues.map((c) => [c.id, c.text]));
-    const order = [...r.clues.map((c) => c.id), ...r.players.filter((p) => !clueOf.has(p.id)).map((p) => p.id)];
+    const gone = new Set(r.players.filter((p) => p.left).map((p) => p.id));
+    const order = [...r.clues.map((c) => c.id), ...r.players.filter((p) => !clueOf.has(p.id) && !p.left).map((p) => p.id)];
     const canVote = r.inRound;
     const sel = pickedVote ?? r.myVote;
     const list = `<ul class="clues">${order.map((id) => {
       const self = S.me && id === S.me.id;
-      const said = clueOf.has(id) ? `“${esc(clueOf.get(id))}”` : '<span class="muted small">no clue</span>';
-      const inner = `${OC.avatar(id, nameOf(id))}<span class="who">${esc(nameOf(id))}${self ? ' (you)' : ''}</span><span class="said">${said}</span>`;
-      return canVote ? `<li><button class="clue${sel === id ? ' picked' : ''}" data-pick="${id}" ${self ? 'disabled' : ''} aria-pressed="${sel === id}">${inner}</button></li>` : `<li><div class="clue">${inner}</div></li>`;
+      const said = clueOf.has(id) ? `“${esc(clueOf.get(id))}”` : '<span class="none">no clue</span>';
+      const inner = `${OC.avatar(id, nameOf(id))}<span class="who stacked"><span class="nm">${esc(nameOf(id))}${self ? ' (you)' : ''}${gone.has(id) ? ' (left)' : ''}</span><span class="said">${said}</span></span>`;
+      return canVote ? `<li><button class="clue${sel === id ? ' picked' : ''}" data-pick="${id}" ${self || gone.has(id) ? 'disabled' : ''} aria-pressed="${sel === id}">${inner}</button></li>` : `<li><div class="clue">${inner}</div></li>`;
     }).join('')}</ul>`;
     const status = `<section class="card"><h2>Who's voted</h2>${chips(live, r.voted)}${progress(r.voted.filter((id) => live.some((p) => p.id === id)).length, live.length, 'votes in')}${deadlineLine(r)}
       ${isHost() ? `<button class="btn small line" data-advance ${r.voted.length < 1 ? 'disabled' : ''}>Reveal the imposter now</button>` : ''}</section>`;
@@ -241,22 +253,25 @@
     const byTarget = new Map();
     for (const x of v.votes) { if (!byTarget.has(x.for)) byTarget.set(x.for, []); byTarget.get(x.for).push(x.byName); }
     const clueOf = new Map(r.clues.map((c) => [c.id, c.text]));
-    const rows = v.counts.map((c) => `<li><div class="clue${c.id === v.imposterId ? ' is-imp' : ''}">${OC.avatar(c.id, c.name)}<span class="who">${esc(c.name)}${c.id === v.imposterId ? ' <span class="pill imp">imposter</span>' : ''}<br><span class="small muted">${clueOf.has(c.id) ? `said “${esc(clueOf.get(c.id))}”` : 'no clue'}${byTarget.get(c.id) ? ` · votes from ${byTarget.get(c.id).map(esc).join(', ')}` : ''}</span></span><span class="n">${c.votes}</span></div></li>`).join('');
+    const rows = v.counts.map((c) => `<li><div class="clue${c.id === v.imposterId ? ' is-imp' : ''}">${OC.avatar(c.id, c.name)}<span class="who stacked"><span class="nm">${esc(c.name)}${c.id === v.imposterId ? ' <span class="pill imp">imposter</span>' : ''}</span><span class="said">${clueOf.has(c.id) ? `“${esc(clueOf.get(c.id))}”` : '<span class="none">no clue</span>'}</span>${byTarget.get(c.id) ? `<span class="small muted">Votes from ${byTarget.get(c.id).map(esc).join(', ')}</span>` : ''}</span><span class="n" aria-label="${c.votes} votes">${c.votes}</span></div></li>`).join('');
     const guessLine = v.guess ? `${esc(v.imposterName)} guessed “${esc(v.guess)}”: ${v.guessed ? '<b style="color:var(--ok)">right!</b>' : 'wrong.'}` : `${esc(v.imposterName)} didn't guess the word.`;
     const me = S.me && S.members.some((m) => m.id === S.me.id);
-    return header(`<span class="pill ok">Round ${r.no} · reveal</span>`) + `<section class="card reveal">
+    const crewWon = v.outcome === 'caught';
+    const banner = { caught: 'Crew wins', 'caught-guessed': 'Caught, but the imposter stole 2 points', 'escaped-guessed': 'Imposter wins, word guessed too', escaped: 'Imposter wins' }[v.outcome];
+    return header(`<span class="pill ok">Round ${r.no} · reveal</span>`) + `<section class="card reveal ${crewWon ? 'crew-won' : 'imp-won'}">
+      <p class="banner">${banner}</p>
       <p class="muted small" style="margin:0">${wasMe ? 'You were the imposter' : 'The imposter was…'}</p>
       <div class="big">${head}</div>
       <p>The word was <span class="word">${esc(r.word)}</span> <span class="muted small">(${esc(r.category)})</span></p>
       <p class="muted">${impClue ? `Their clue: “${esc(impClue)}” · ` : ''}${v.againstImposter ?? v.counts.find((c) => c.id === v.imposterId)?.votes ?? 0} of ${v.votes.length} votes on them. ${guessLine}</p>
-      <div class="row" style="margin-top:14px">
+      <div class="row wrap-sm" style="margin-top:14px">
         ${me ? `<button class="btn" data-deal>Deal next round</button>` : ''}
         <button class="btn ghost" data-card-share>Share result</button>
       </div>
       <p id="err" class="error" role="alert"></p>
     </section>
     <section class="card"><h2>The votes</h2><ul class="clues">${rows}</ul></section>` + scoresCard() + `
-    <section class="card center flat"><h2>Got another group chat?</h2><p class="muted">Start a game there too. It takes ten seconds.</p><a class="btn ghost" href="/">Start a game in another chat</a></section>` + (me ? inviteCard(true) : '') + footerLinks();
+    <section class="card center flat"><h2>Got another group chat?</h2><p class="muted">Start a game there too. It takes ten seconds.</p><a class="btn ghost" href="/">Start a game in another chat</a></section>` + (me ? inviteCard(true) : '') + footerLinks(false);
   }
 
   // ---------- render ----------

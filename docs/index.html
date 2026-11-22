@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <title>Oddclue · the imposter word game for your group chat</title>
   <meta name="description" content="Oddclue is a free imposter word game you play from one link in your group chat. No app, no sign-up.">
   <meta property="og:title" content="Oddclue · the imposter word game for your group chat">
@@ -13,13 +15,45 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <div class="wrap"><header class="top"><a class="logo" href="https://pb-imposter-chat.jan-bef.workers.dev/"><img src="icon.svg" alt="" width="32" height="32">Oddclue</a></header></div>
-  <main><div class="wrap">
-    <span class="eyebrow">Free · no app · no sign-up</span>
-    <h1>The imposter word game, right in your group chat.</h1>
-    <p class="lead">Everyone gets the same secret word, except one imposter who has to bluff. Each player gives a one-word clue on their own phone, whenever they like. Then the group votes out the faker.</p>
-    <p><a class="btn" href="https://pb-imposter-chat.jan-bef.workers.dev/">Start a game</a></p>
-    <img src="og.png" alt="Oddclue: one of you doesn't know the word" style="width:100%;border-radius:18px;margin:18px 0">
+  <div class="wrap wide"><header class="top"><a class="logo" href="https://pb-imposter-chat.jan-bef.workers.dev/"><img src="icon.svg" alt="" width="32" height="32">Oddclue</a><a class="top-link" href="https://pb-imposter-chat.jan-bef.workers.dev/">Play now</a></header></div>
+  <main><div class="wrap wide">
+    <section style="padding:36px 0 0;max-width:720px">
+      <div class="intro">
+        <span class="eyebrow">Free · no app · no sign-up</span>
+        <h1>The imposter word game, right in your group chat.</h1>
+        <p class="lead">Everyone gets the same secret word, except one imposter who has to bluff. Each player gives a one-word clue on their own phone, whenever they like. Then the group votes out the faker.</p>
+        <p style="max-width:320px"><a class="btn" href="https://pb-imposter-chat.jan-bef.workers.dev/">Start a game</a></p>
+      </div>
+    </section>
+      <section class="showcase" aria-label="What a round looks like">
+        <figure>
+          <div class="secret mini"><div><div class="k">Food · secret word</div><div class="w">pancake</div><div class="h">One player doesn't know it</div></div></div>
+          <figcaption><b>Most of you see the word</b> on your own phone.</figcaption>
+        </figure>
+        <figure>
+          <div class="secret imp mini"><div><div class="k">You are the</div><div class="w">Imposter</div><div class="h">Category: <b>Food</b> · Bluff!</div></div></div>
+          <figcaption><b>One of you doesn't</b>, and has to fake a clue.</figcaption>
+        </figure>
+        <figure>
+          <div class="card mini-votes" aria-hidden="true">
+            <div class="clue"><span class="av" style="background:#0f9d7a">L</span><span class="who stacked"><span class="nm">Leo</span><span class="said">“syrup”</span></span></div>
+            <div class="clue picked"><span class="av" style="background:#e5484d">S</span><span class="who stacked"><span class="nm">Sam</span><span class="said">“crunchy”</span></span></div>
+            <div class="clue"><span class="av" style="background:#2f7de1">M</span><span class="who stacked"><span class="nm">Maya</span><span class="said">“flip”</span></span></div>
+          </div>
+          <figcaption><b>Then everyone votes.</b> Sam, crunchy pancakes?</figcaption>
+        </figure>
+      </section>
+
+      <section id="how">
+        <h2>How to play</h2>
+        <div class="steps">
+          <div class="step"><b>1</b><h3>Share the link</h3><p class="muted">Create a game and send the link to your group. You need 3 or more players.</p></div>
+          <div class="step"><b>2</b><h3>Peek at your card</h3><p class="muted">Everyone sees the secret word, except the imposter, who only sees the category.</p></div>
+          <div class="step"><b>3</b><h3>Give one clue</h3><p class="muted">Write a word that proves you know it, without giving it away. Clues stay hidden until all are in.</p></div>
+          <div class="step"><b>4</b><h3>Vote out the faker</h3><p class="muted">Read the clues and vote. If caught, the imposter can still steal points by guessing the word.</p></div>
+        </div>
+      </section>
+
     <section class="card flat">
       <h2>Support</h2>
       <p>Found a bug or have an idea? <a href="https://github.com/janwan2003/imposter-chat/issues">Open an issue on GitHub</a>. Please don't include personal details.</p>
@@ -30,6 +64,6 @@
       <p>Oddclue is a free party word game.</p>
     </section>
   </div></main>
-  <footer><div class="wrap"><span>Oddclue</span><span><a href="privacy.html">Privacy</a></span></div></footer>
+  <footer><div class="wrap wide"><span>Oddclue · a free party word game</span><span><a href="privacy.html">Privacy</a> · <a href="https://github.com/janwan2003/imposter-chat/issues">Support</a></span></div></footer>
 </body>
 </html>

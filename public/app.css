@@ -71,6 +71,7 @@ input[type=text]:focus, select:focus { border-color: var(--brand); }
 .btn.danger { background: var(--imp-soft); color: var(--imp); }
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
+@media (max-width: 420px) { .row.wrap-sm { flex-direction: column; } }
 .stack > * + * { margin-top: 10px; }
 .error { color: var(--imp); font-weight: 600; font-size: .95rem; min-height: 1.2em; margin: 8px 0 0; }
 .hidden { display: none !important; }
@@ -90,13 +91,43 @@ details.more summary { cursor: pointer; color: var(--muted); font-weight: 600; m
 .check input { width: 20px; height: 20px; accent-color: var(--brand); }
 
 /* Landing */
-.hero { padding: 28px 0 8px; display: grid; gap: 28px; align-items: center; }
-@media (min-width: 900px) { .hero { grid-template-columns: 1.1fr .9fr; padding-top: 48px; } }
+.hero { padding: 20px 0 8px; display: grid; gap: 18px 56px; grid-template-areas: "intro" "form" "ticks"; }
+.hero .intro { grid-area: intro; }
+.hero form { grid-area: form; margin: 0; }
+.hero .ticks { grid-area: ticks; margin: 0; }
+.hero h1 { margin-bottom: .9rem; }
+@media (min-width: 900px) {
+  .hero { grid-template-columns: 1.1fr .9fr; grid-template-areas: "intro form" "ticks form"; grid-template-rows: auto 1fr; padding-top: 48px; align-items: start; }
+  .hero .intro { align-self: end; }
+}
+@media (max-width: 899px) { .hero .lead { font-size: 1.05rem; } }
+/* Landing: what a round looks like */
+.showcase { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 44px 0 8px; }
+.showcase figure { margin: 0; }
+.showcase figcaption { margin-top: 12px; color: var(--muted); font-size: .95rem; }
+.showcase figcaption b { color: var(--ink); }
+.secret.mini { min-height: 168px; cursor: default; }
+.secret.mini .w { font-size: 2.2rem; }
+.mini-votes { margin: 0; padding: 12px; display: grid; gap: 8px; min-height: 168px; align-content: center; }
+.mini-votes .clue { padding: 7px 10px; }
+.mini-votes .said { font-size: 1.05rem; }
+@media (max-width: 759px) {
+  .showcase { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 18px 14px; margin: 32px -18px 0; scrollbar-width: none; }
+  .showcase::-webkit-scrollbar { display: none; }
+  .showcase figure { scroll-snap-align: center; }
+}
 .eyebrow { display: inline-block; background: var(--brand-soft); color: var(--brand); font-weight: 700; font-size: .85rem; padding: 5px 11px; border-radius: 999px; margin-bottom: 14px; }
 .lead { font-size: 1.15rem; color: var(--muted); max-width: 34em; }
-.steps { display: grid; gap: 14px; margin: 36px 0; }
+.steps { display: grid; gap: 14px; margin: 18px 0 36px; }
+#how { margin-top: 36px; }
 @media (min-width: 760px) { .steps { grid-template-columns: repeat(4, 1fr); } }
 .step { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+@media (max-width: 759px) {
+  .step { display: grid; grid-template-columns: 30px 1fr; column-gap: 14px; padding: 16px; }
+  .step b { grid-row: span 2; margin: 0; }
+  .step h3 { margin-top: 4px; }
+  .step p { margin: 0; }
+}
 .step b { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; margin-bottom: 8px; }
 .faq h3 { margin-top: 18px; }
 .ticks { list-style: none; padding: 0; margin: 14px 0; }
@@ -111,7 +142,9 @@ footer a { color: var(--muted); }
 /* Game page */
 .game-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 4px 0 14px; }
 .game-head h1 { font-size: 1.6rem; margin: 0; overflow-wrap: anywhere; }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .85rem; font-weight: 700; background: var(--brand-soft); color: var(--brand); white-space: nowrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .85rem; font-weight: 700; line-height: 1.35; background: var(--brand-soft); color: var(--brand); }
+.game-head .pill, .who .pill { white-space: nowrap; }
+p.pill { border-radius: 12px; padding: 8px 12px; overflow-wrap: anywhere; }
 .pill.imp { background: var(--imp-soft); color: var(--imp); }
 .pill.ok { background: var(--ok-soft); color: var(--ok); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; padding: 0; list-style: none; }
@@ -142,13 +175,22 @@ button.clue { cursor: pointer; }
 button.clue:disabled { cursor: default; opacity: .6; }
 .clue .who { font-weight: 700; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .clue .said { font-size: 1.15rem; font-weight: 800; color: var(--brand); overflow-wrap: anywhere; text-align: right; }
+/* Vote list: name above the clue, so a long clue can never squeeze the name. */
+.clue .who.stacked { display: flex; flex-direction: column; gap: 1px; }
+.clue .who .nm { font-size: .9rem; color: var(--muted); font-weight: 700; }
+.clue .who .said { text-align: left; font-size: 1.2rem; line-height: 1.25; }
+.clue .who .none { font-size: .95rem; font-weight: 600; color: var(--muted); font-style: italic; }
 .clue.picked { border-color: var(--imp); background: var(--imp-soft); }
 .clue.picked .said { color: var(--imp); }
 .clue.is-imp { border-color: var(--imp); }
-.clue .n { font-weight: 800; color: var(--muted); }
+.clue .n { font-weight: 800; color: var(--muted); font-size: 1.2rem; min-width: 1.2em; text-align: right; }
+.clue.is-imp .n { color: var(--imp); }
 
 /* Reveal */
-.reveal { text-align: center; }
+.reveal { text-align: center; overflow: hidden; padding-top: 0; }
+.reveal .banner { margin: 0 -20px 16px; padding: 10px 16px; font-weight: 800; font-size: .95rem; letter-spacing: .01em; color: #fff; background: var(--ok); }
+.reveal.imp-won .banner { background: linear-gradient(90deg, var(--imp), #f97316); }
+.reveal.crew-won .banner { background: linear-gradient(90deg, var(--ok), #2bb673); }
 .reveal .big { font-size: clamp(1.5rem, 6vw, 2rem); font-weight: 900; letter-spacing: -.02em; margin: 10px 0; }
 .reveal .word { display: inline-block; background: var(--brand-soft); color: var(--brand); font-weight: 800; padding: 6px 14px; border-radius: 12px; font-size: 1.2rem; }
 .scores { list-style: none; padding: 0; margin: 0; }

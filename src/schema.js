@@ -51,6 +51,13 @@ CREATE TABLE IF NOT EXISTS votes (
   target_id INTEGER NOT NULL,
   PRIMARY KEY (game_id, no, voter_id)
 );
+-- Aggregate counts per UTC day for the weekly metrics line. Counts only, nothing about who.
+CREATE TABLE IF NOT EXISTS daily (
+  day TEXT PRIMARY KEY,           -- YYYY-MM-DD
+  games INTEGER NOT NULL DEFAULT 0,
+  joins INTEGER NOT NULL DEFAULT 0,
+  rounds INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS rate (
   k TEXT PRIMARY KEY,
   n INTEGER NOT NULL,

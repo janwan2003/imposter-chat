@@ -39,7 +39,7 @@
     } catch (e2) {
       err.textContent = e2.message;
       btn.disabled = false;
-      btn.textContent = 'Create game and get the link';
+      btn.textContent = 'Create game';
     }
   });
 })();

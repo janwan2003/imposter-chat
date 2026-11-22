@@ -3,10 +3,11 @@ import {
   MIN_PLAYERS, MAX_PLAYERS, LIMITS as TIME_LIMITS, clueProblem, pickImposter, pickWord, scoreRound, totals, nextState, shuffleSeeded,
 } from './engine.js';
 
+// Per IP per hour. Generous because a school or a mobile carrier can put a whole class behind one IP.
 const RATE = {
-  create: [20, 3600], // new games per IP per hour
-  join: [60, 3600], // joins per IP per hour
-  write: [900, 3600], // clues, votes, deals per IP per hour
+  create: [60, 3600], // new games
+  join: [300, 3600], // joins
+  write: [3000, 3600], // clues, votes, deals
 };
 
 const json = (data, status = 200) =>
@@ -79,6 +80,10 @@ async function body(request) {
     return null;
   }
 }
+
+// Adds one to today's counter for 'games', 'joins' or 'rounds'. Our own test runs send x-test: 1 and add 0.
+const count = (env, col, request) => env.DB.prepare(`INSERT INTO daily (day, ${col}) VALUES (?1, ?2) ON CONFLICT(day) DO UPDATE SET ${col} = ${col} + ?2`)
+  .bind(new Date().toISOString().slice(0, 10), request.headers.get('x-test') === '1' ? 0 : 1);
 
 const validId = (id) => /^[A-Za-z0-9]{6,16}$/.test(id || '');
 
@@ -225,7 +230,7 @@ async function fullState(env, request, game) {
   return out;
 }
 
-async function deal(env, game, members) {
+async function deal(env, game, members, request) {
   const players = members.map((m) => m.id).slice(0, MAX_PLAYERS);
   const prev = await loadRound(env, game);
   const { results: used } = await env.DB.prepare('SELECT word FROM rounds WHERE game_id = ?1').bind(game.id).all();
@@ -238,6 +243,7 @@ async function deal(env, game, members) {
       .bind(game.id, no, pick.word, pick.category, imp, JSON.stringify(players), 'clue', deadline, now()),
     env.DB.prepare('UPDATE games SET round_no = ?2, version = version + 1, active_at = ?3 WHERE id = ?1 AND round_no = ?4').bind(game.id, no, now(), game.round_no),
   ]);
+  if (res[1].meta.changes > 0) await count(env, 'rounds', request).run();
   return res[1].meta.changes > 0;
 }
 
@@ -253,6 +259,15 @@ export async function onRequest({ request, env, params }) {
     // GET /api/packs
     if (parts[0] === 'packs' && method === 'GET') {
       return json({ packs: PACKS.map((p) => ({ id: p.id, name: p.name, emoji: p.emoji, count: p.words.length })), defaults: DEFAULT_PACKS });
+    }
+    // GET /api/stats -> aggregate counts only (per UTC day, plus games currently stored)
+    if (parts[0] === 'stats' && method === 'GET') {
+      const { results: days } = await env.DB.prepare('SELECT day, games, joins, rounds FROM daily ORDER BY day DESC LIMIT 60').all();
+      const live = await env.DB.prepare('SELECT COUNT(*) AS games, (SELECT COUNT(*) FROM members WHERE left_at IS NULL) AS players FROM games').first();
+      const since = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+      const sum = (from, to) => days.filter((d) => d.day >= from && d.day < to).reduce((a, d) => ({ games: a.games + d.games, joins: a.joins + d.joins, rounds: a.rounds + d.rounds }), { games: 0, joins: 0, rounds: 0 });
+      const today = new Date().toISOString().slice(0, 10);
+      return json({ last7: sum(since(6), today + 'z'), prev7: sum(since(13), since(6)), stored: live, days, countedSince: days.length ? days[days.length - 1].day : null });
     }
     if (parts[0] !== 'games') return err(404, 'Not found');
 
@@ -272,7 +287,7 @@ export async function onRequest({ request, env, params }) {
         .bind(id, name, JSON.stringify(packsFrom(b.packs)), b.showCategory === false ? 0 : 1, limit, t).run();
       const m = await env.DB.prepare('INSERT INTO members (game_id, name, token_hash, created_at) VALUES (?1, ?2, ?3, ?4) RETURNING id')
         .bind(id, nick, await sha256(token), t).first();
-      await env.DB.prepare('UPDATE games SET host_id = ?2 WHERE id = ?1').bind(id, m.id).run();
+      await env.DB.batch([env.DB.prepare('UPDATE games SET host_id = ?2 WHERE id = ?1').bind(id, m.id), count(env, 'games', request)]);
       if (rand() < 0.05) await cleanup(env);
       return json({ id, token, memberId: m.id }, 201);
     }
@@ -302,7 +317,7 @@ export async function onRequest({ request, env, params }) {
       const token = randomId(24);
       const m = await env.DB.prepare('INSERT INTO members (game_id, name, token_hash, created_at) VALUES (?1, ?2, ?3, ?4) RETURNING id')
         .bind(game.id, nick, await sha256(token), now()).first();
-      await bump(env, game.id).run();
+      await env.DB.batch([bump(env, game.id), count(env, 'joins', request)]);
       return json({ token, memberId: m.id }, 201);
     }
 
@@ -319,7 +334,7 @@ export async function onRequest({ request, env, params }) {
       if (!round && self.id !== game.host_id) return err(403, 'Only the host can deal the first round.');
       if (Number(b.after) !== game.round_no) return json({ ok: true, already: true });
       if (members.length < MIN_PLAYERS) return err(409, `You need at least ${MIN_PLAYERS} players.`);
-      await deal(env, game, members);
+      await deal(env, game, members, request);
       return json({ ok: true });
     }
 
@@ -342,7 +357,7 @@ export async function onRequest({ request, env, params }) {
       if (!round || round.state !== 'vote') return err(409, 'Voting is not open.');
       if (!round.players.includes(self.id)) return err(403, 'You join from the next round.');
       const target = Number(b.target);
-      if (!round.players.includes(target)) return err(400, 'Pick a player from this round.');
+      if (!round.players.includes(target) || !members.some((m) => m.id === target)) return err(400, 'Pick a player who is still in this round.');
       if (target === self.id) return err(400, 'You cannot vote for yourself.');
       const stmts = [
         env.DB.prepare('INSERT INTO votes (game_id, no, voter_id, target_id) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(game_id, no, voter_id) DO UPDATE SET target_id = excluded.target_id')
